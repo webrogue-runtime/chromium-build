@@ -211,6 +211,13 @@ template("clang_lib") {
         } else {
           assert(false)  # Unhandled cpu type
         }
+      } else if (is_wasi) {
+        _dir = "wasm32-unknown-wasip1-threads"
+        if (current_cpu == "wasm32") {
+          _suffix = ""
+        } else {
+          assert(false)  # Unhandled cpu type
+        }
       } else {
         assert(false)  # Unhandled target platform
       }

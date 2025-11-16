@@ -115,7 +115,7 @@ use_chromium_rust_toolchain = rust_sysroot_absolute == ""
 rustc_nightly_capability = use_chromium_rust_toolchain
 
 # Platform support for the Rust toolchain.
-chromium_toolchain_supports_platform = !is_wasm
+chromium_toolchain_supports_platform = !is_wasm && !is_wasi
 custom_toolchain_supports_platform = true
 
 # Not all target triples (GN toolchains) are supported by the Rust compiler.
@@ -331,6 +331,12 @@ if (is_linux || is_chromeos) {
     rust_abi_target = "x86_64-pc-windows-msvc"
   } else if (current_cpu == "x86") {
     rust_abi_target = "i686-pc-windows-msvc"
+  } else {
+    assert(false, "Architecture not supported")
+  }
+} else if (is_wasi) {
+  if (current_cpu == "wasm32") {
+    rust_abi_target = "wasm32-unknown-unknown"
   } else {
     assert(false, "Architecture not supported")
   }

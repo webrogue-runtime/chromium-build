@@ -990,7 +990,7 @@ config("compiler") {
 
   # TODO(crbug.com/40242425): Cleanup undefined symbol errors caught by
   # --no-undefined-version.
-  if (use_lld && !is_win && !is_mac && !is_ios && !is_wasm) {
+  if (use_lld && !is_win && !is_mac && !is_ios && !is_wasm && !is_wasi) {
     ldflags += [ "-Wl,--undefined-version" ]
   }
 
@@ -1005,7 +1005,7 @@ config("compiler") {
   if (use_lld && !enable_call_graph_profile_sort) {
     if (is_win) {
       ldflags += [ "/call-graph-profile-sort:no" ]
-    } else if (!is_wasm) {
+    } else if (!is_wasm && !is_wasi) {
       # Emscripten compiler does not support this linker flag.
       ldflags += [ "-Wl,--no-call-graph-profile-sort" ]
     }
@@ -3155,7 +3155,7 @@ config("symbols") {
       ldflags += split_dwarf_flags
     }
 
-    _enable_gdb_index = symbol_level == 2 && !is_apple && use_lld && !is_wasm
+    _enable_gdb_index = symbol_level == 2 && !is_apple && use_lld && !is_wasm && !is_wasi
     if (_enable_gdb_index) {
       if (is_clang) {
         # This flag enables the GNU-format pubnames and pubtypes sections,
