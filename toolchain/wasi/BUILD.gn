@@ -13,7 +13,7 @@ declare_args() {
 # i.e. tests and samples are currently fine.
 # Usage of this toolchain requires getting explicit approval from
 # build/OWNERS.
-gcc_toolchain("wasm32") {
+gcc_toolchain("wasm32-wasip1") {
   cc = "$wasi_sdk_path/bin/clang"
   cxx = "$wasi_sdk_path/bin/clang++"
   ar = "$wasi_sdk_path/bin/ar"
@@ -47,3 +47,39 @@ gcc_toolchain("wasm32") {
     "{{output_dir}}/{{target_output_name}}.wasm",
   ]
 }
+
+gcc_toolchain("wasm32-wasip3") {
+  cc = "$wasi_sdk_path/bin/wasm32-wasip3-clang"
+  cxx = "$wasi_sdk_path/bin/wasm32-wasip3-clang++"
+  ar = "$wasi_sdk_path/bin/ar"
+  nm = cc
+  ld = cxx
+
+  toolchain_args = {
+    current_cpu = "wasm32"
+    current_os = "wasip3"
+
+    is_clang = true
+    use_remoteexec = false
+    use_debug_fission = false
+    clang_use_chrome_plugins = false
+    use_allocator_shim = false
+    is_component_build = false
+
+    # We do not support clang profiling in the WASM toolchains.
+    use_clang_profiling = false
+    use_clang_coverage = false
+
+    # WASM builds cannot currently use the custom libc++ because
+    # there are custom entry points and defines in the one that is
+    # shipped with emsdk.
+    use_custom_libcxx = false
+    use_custom_libcxx_for_host = false
+  }
+  executable_extension = ".exe.wasm"
+  shlib_extension = ".so.wasm"
+  link_outputs = [
+    "{{output_dir}}/{{target_output_name}}.wasm",
+  ]
+}
+
