@@ -7,9 +7,11 @@
 load("@builtin//lib/gn.star", "gn")
 load("@builtin//struct.star", "module")
 load("./platform.star", "platform")
+load("./config.star", "config")
 
 def __step_config(ctx, step_config):
-    remote_run = True  # Turn this to False when you do file access trace.
+    # Turn this to False when you do file access trace.
+    remote_run = config.get(ctx, "googlechrome")
     if "args.gn" in ctx.metadata:
         gn_args = gn.args(ctx)
         if gn_args.get("target_cpu", "").strip('"') == "x86":
@@ -21,6 +23,7 @@ def __step_config(ctx, step_config):
             "command_prefix": platform.python_bin + " ../../v8/tools/run.py ./torque",
             "remote": remote_run,
             "timeout": "2m",
+            "remote_command": platform.remote_python_bin,
         },
         {
             "name": "v8/mksnapshot",
@@ -33,6 +36,7 @@ def __step_config(ctx, step_config):
             # The outputs of mksnapshot are often required for running the
             # following steps.
             "output_local": True,
+            "remote_command": platform.remote_python_bin,
         },
     ])
     return step_config

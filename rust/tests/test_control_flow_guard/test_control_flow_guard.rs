@@ -25,6 +25,7 @@ const NOP_INSTRUCTION_SIZE: usize = 4;
 
 #[inline(never)]
 fn nop_sled() {
+    // SAFETY: This block deliberately invokes UB to ensure that CFG catches it.
     unsafe { asm!("nop", "nop", "ret",) }
 }
 
@@ -35,7 +36,8 @@ fn indirect_call(func: fn()) {
 
 fn main() {
     let fptr =
-        unsafe { std::mem::transmute::<usize, fn()>(nop_sled as usize + NOP_INSTRUCTION_SIZE) };
+        // SAFETY: This block deliberately invokes UB to ensure that CFG catches it.
+        unsafe { std::mem::transmute::<usize, fn()>(nop_sled as *const () as usize + NOP_INSTRUCTION_SIZE) };
     // Generates a FAST_FAIL_GUARD_ICALL_CHECK_FAILURE if CFG triggers.
     // `std::hint::black_box` is used to prevent optimizing away the call.
     indirect_call(std::hint::black_box(fptr));

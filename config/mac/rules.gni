@@ -248,6 +248,7 @@ template("mac_framework_bundle") {
 
   # Create the symlinks.
   _framework_package_target = target_name + "_package"
+
   action(_framework_package_target) {
     script = "//build/config/mac/package_framework.py"
 
@@ -311,6 +312,7 @@ template("mac_framework_bundle") {
   }
 
   _framework_public_config = _target_name + "_public_config"
+
   config(_framework_public_config) {
     visibility = [ ":$_framework_target+link" ]
     framework_dirs = [ root_out_dir ]
@@ -453,7 +455,7 @@ template("mac_app_bundle") {
     _product_type = "com.apple.product-type.bundle"
     _write_pkg_info = false
   } else {
-    assert(false, "Unsupported packge_type: " + packge_type)
+    assert(false, "Unsupported packge_type: " + _package_type)
   }
 
   _executable_target = target_name + "_executable"

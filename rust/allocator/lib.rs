@@ -18,19 +18,22 @@
 //
 // TODO(https://crbug.com/410596442): Stop using unstable features here.
 // https://github.com/rust-lang/rust/issues/29603 tracks stabilization of the `linkage` feature.
-#![cfg_attr(not(rust_allocator_no_nightly_capability), feature(linkage))]
+#![feature(linkage)]
 // Required to apply `#[rustc_std_internal_symbol]` to our alloc error handler
 // so the name is correctly mangled as rustc expects.
 //
 // TODO(https://crbug.com/410596442): Stop using internal features here.
-#![cfg_attr(not(rust_allocator_no_nightly_capability), allow(internal_features))]
-#![cfg_attr(not(rust_allocator_no_nightly_capability), feature(rustc_attrs))]
+#![allow(internal_features)]
+#![feature(rustc_attrs)]
+// TODO(crbug.com/497856781): Document the safety requirements of the C++
+// allocator functions, and then ensure all the blocks in this file are sound.
+#![allow(clippy::undocumented_unsafe_blocks)]
 
 /// Module that provides `#[global_allocator]` / `GlobalAlloc` interface for
 /// using an allocator from C++.
-#[cfg(rust_allocator_uses_allocator_impls_h)]
+#[cfg(RUST_ALLOCATOR_USES_ALLOCATOR_IMPLS_H)]
 mod cpp_allocator {
-    use allocator_impls_ffi::rust_allocator_internal as ffi;
+    use allocator_impls_ffi::root::rust_allocator_internal as ffi;
     use std::alloc::{GlobalAlloc, Layout};
 
     struct Allocator;
@@ -61,7 +64,7 @@ mod cpp_allocator {
 
 /// Module that provides `#[global_allocator]` / `GlobalAlloc` interface for
 /// using the default Rust allocator.
-#[cfg(not(rust_allocator_uses_allocator_impls_h))]
+#[cfg(not(RUST_ALLOCATOR_USES_ALLOCATOR_IMPLS_H))]
 mod rust_allocator {
     #[global_allocator]
     static GLOBAL: std::alloc::System = std::alloc::System;
@@ -80,9 +83,8 @@ mod rust_allocator {
 /// `rustc`.
 ///
 /// TODO(https://crbug.com/410596442): Stop using internal features here.
-#[cfg(not(rust_allocator_no_nightly_capability))]
 mod both_allocators {
-    use alloc_error_handler_impl_ffi::rust_allocator_internal as ffi;
+    use alloc_error_handler_impl_ffi::root::rust_allocator_internal as ffi;
 
     /// As part of rustc's contract for using `#[global_allocator]` without
     /// rustc-generated shims we must define this symbol, since we are opting in
@@ -91,9 +93,21 @@ mod both_allocators {
     #[linkage = "weak"]
     fn __rust_no_alloc_shim_is_unstable_v2() {}
 
+    #[cfg(not(RUST_ALLOCATOR_NIGHTLY_CAPABILITY))]
+    #[rustc_std_internal_symbol]
+    #[linkage = "weak"]
+    fn __rust_no_alloc_shim_is_unstable() {}
+
     #[rustc_std_internal_symbol]
     #[linkage = "weak"]
     fn __rust_alloc_error_handler_should_panic_v2() -> u8 {
+        0
+    }
+
+    #[cfg(not(RUST_ALLOCATOR_NIGHTLY_CAPABILITY))]
+    #[rustc_std_internal_symbol]
+    #[linkage = "weak"]
+    fn __rust_alloc_error_handler_should_panic() -> u8 {
         0
     }
 
@@ -104,37 +118,6 @@ mod both_allocators {
     fn __rust_alloc_error_handler(_size: usize, _align: usize) {
         // TODO(lukasza): Investigate if we can just call `std::process::abort()` here.
         // (Not really _needed_, but it could simplify code a little bit.)
-        unsafe { ffi::alloc_error_handler_impl() }
-    }
-}
-
-#[cfg(rust_allocator_no_nightly_capability)]
-mod both_allocators {
-    use alloc_error_handler_impl_ffi::rust_allocator_internal as ffi;
-
-    fn oom_should_panic_impl() -> u8 {
-        0
-    }
-
-    #[no_mangle]
-    fn __rust_no_alloc_shim_is_unstable() {}
-
-    #[no_mangle]
-    fn __rust_no_alloc_shim_is_unstable_v2() {}
-
-    #[no_mangle]
-    fn __rust_alloc_error_handler_should_panic() -> u8 {
-        oom_should_panic_impl()
-    }
-
-    #[no_mangle]
-    fn __rust_alloc_error_handler_should_panic_v2() -> u8 {
-        oom_should_panic_impl()
-    }
-
-    #[allow(non_upper_case_globals)]
-    #[no_mangle]
-    fn __rust_alloc_error_handler(_size: usize, _align: usize) {
         unsafe { ffi::alloc_error_handler_impl() }
     }
 }

@@ -5,16 +5,18 @@
 """Siso configuration for proto/linux."""
 
 load("@builtin//struct.star", "module")
+load("./config.star", "config")
+load("./platform.star", "platform")
 
 def __filegroups(ctx):
     return {}
 
 def __step_config(ctx, step_config):
-    remote_run = True  # Turn this to False when you do file access trace.
+    remote_run = config.get(ctx, "googlechrome")  # Turn this to False when you do file access trace.
     step_config["rules"].extend([
         {
             "name": "proto/protoc_wrapper",
-            "command_prefix": "python3 ../../tools/protoc_wrapper/protoc_wrapper.py",
+            "command_prefix": platform.python_bin + " ../../tools/protoc_wrapper/protoc_wrapper.py",
             "exclude_input_patterns": [
                 "*.o",
                 "*.a",
@@ -23,6 +25,7 @@ def __step_config(ctx, step_config):
                 # "*_pb2.py",
             ],
             "remote": remote_run,
+            "remote_command": platform.remote_python_bin,
             # chromeos generates default.profraw?
             "ignore_extra_output_pattern": ".*default.profraw",
             # "deps": "depfile",

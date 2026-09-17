@@ -6,6 +6,8 @@
 
 load("@builtin//path.star", "path")
 load("@builtin//struct.star", "module")
+load("./config.star", "config")
+load("./platform.star", "platform")
 
 def __filegroups(ctx):
     return {}
@@ -13,14 +15,15 @@ def __filegroups(ctx):
 __handlers = {}
 
 def __step_config(ctx, step_config):
-    remote_run = True  # Turn this to False when you do file access trace.
+    remote_run = config.get(ctx, "googlechrome")  # Turn this to False when you do file access trace.
     rules = []
     for toolchain in ["", "clang_x64"]:
         nasm_path = path.join(toolchain, "nasm")
         rules.append({
             "name": path.join("nasm", toolchain),
-            "command_prefix": "python3 ../../build/gn_run_binary.py " + nasm_path,
+            "command_prefix": platform.python_bin + " ../../build/gn_run_binary.py " + nasm_path,
             "remote": remote_run,
+            "remote_command": platform.remote_python_bin,
             # chromeos generates default.profraw?
             "ignore_extra_output_pattern": ".*default.profraw",
             "timeout": "2m",
